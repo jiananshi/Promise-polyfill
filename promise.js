@@ -1,5 +1,5 @@
 void function() {
-  var Xiaoming = Xiaoming || {};
+  if (!Xiaoming) window.Xiaoming = {};
 
   if (!Object.create) {
     Object.create = function(klass) {
@@ -175,25 +175,25 @@ void function() {
   };
 
   Promise.when = function(promises) {
-      var deferred = Promise.defer();
-      var handler = function(promise, result) {
-        var state = promise.state().state;
+    var deferred = Promise.defer();
+    var handler = function(promise, result) {
+      var state = promise.state().state;
 
-        switch(state) {
-          case 'fullfilled':
-            deferred.resolve(result);
-            break;
-          case 'rejected':
-            deferred.reject(result);
-            break;
-        }
-      };
-
-      for (var i = 0, ii = promises.length; i < ii; i++) {
-        var promise = promises[i];
-        promise.fin(handler);
+      switch(state) {
+        case 'fullfilled':
+          deferred.resolve(result);
+        break;
+        case 'rejected':
+          deferred.reject(result);
+        break;
       }
+    };
 
-      return deferred.promise;
+    for (var i = 0, ii = promises.length; i < ii; i++) {
+      var promise = promises[i];
+      promise.fin(handler);
+    }
+
+    return deferred.promise;
   };
 }();

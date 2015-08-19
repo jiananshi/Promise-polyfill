@@ -1,5 +1,5 @@
 void function() {
-  if (!Xiaoming) window.Xiaoming = {};
+  window.Xiaoming = window.Xiaoming || {};
 
   if (!Object.create) {
     Object.create = function(klass) {

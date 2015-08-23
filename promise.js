@@ -14,9 +14,27 @@ void function() {
     };
   }
 
+  if (!Array.isArray) {
+    Array.isArray = function(obj) {
+      return Object.prototype.toString.call(obj) === '[object Array]';
+    };
+  }
+
   Array.prototype.forEachRight = function(func) {
     for (var i = this.length - 1; i >= 0; i--) {
       func(this[i], i);
+    }
+  };
+
+  var shallowCopy = function(obj) {
+    if (typeof obj !== 'object') throw new Error('paramater must be an object');
+
+    if (Array.isArray(obj)) {
+      var result = [];
+
+      obj.slice(0).forEach(function(value) {
+        result.push(value);
+      });
     }
   };
 
@@ -58,12 +76,14 @@ void function() {
           switch(_state) {
             case 'fullfilled':
               if (thenPromise.onFullfilled && (typeof thenPromise.onFullfilled === 'function')) {
+                var pending = shallowCopy(_pending);
+
                 setTimeout(function() {
                   returnValue = thenPromise.onFullfilled(_value);
 
                   if (returnValue && (typeof returnValue.then === 'function')) {
                     for (var j = index - 1; j >= 0; j--) {
-                      returnValue.then(_pending[j].onFullfilled, _pending[j].onRejected);
+                      returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
                     }
 
                     _pending = [];
@@ -73,12 +93,14 @@ void function() {
               break;
             case 'rejected':
               if (thenPromise.onRejected && (typeof thenPromise.onRejected === 'function')) {
+                var pending = shallowCopy(_pending);
+
                 setTimeout(function() {
                   returnValue = thenPromise.onRejected(_reason);
 
                   if (returnValue && (typeof returnValue.then === 'function')) {
                     for (var j = index - 1; j >= 0; j--) {
-                      returnValue.then(_pending[j].onFullfilled, _pending[j].onRejected);
+                      returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
                     }
 
                     _pending = [];
@@ -88,12 +110,13 @@ void function() {
               break;
           }
 
-
         } catch(e) {
           // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
           _state = 'rejected';
           _reason = e;
         }
+
+        _pending.splice(index, 1);
       });
     }
 

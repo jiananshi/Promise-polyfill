@@ -73,7 +73,6 @@ void function() {
       _pending.forEachRight(function(thenPromise, index) {
         var returnValue = null;
 
-        try {
           switch(_state) {
             case 'fullfilled':
               if (thenPromise.onFullfilled && (typeof thenPromise.onFullfilled === 'function')) {
@@ -81,14 +80,20 @@ void function() {
 
                 setTimeout(function() {
                   var onFullfilled = thenPromise.onFullfilled;
-                  returnValue = onFullfilled(_value);
+                  try {
+                    returnValue = onFullfilled(_value);
 
-                  if (returnValue && (typeof returnValue.then === 'function')) {
-                    for (var j = index - 1; j >= 0; j--) {
-                      returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
+                    if (returnValue && (typeof returnValue.then === 'function')) {
+                      for (var j = index - 1; j >= 0; j--) {
+                        returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
+                      }
+
+                      _pending = [];
                     }
-
-                    _pending = [];
+                  } catch(e) {
+                    // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
+                    _state = 'rejected';
+                    _reason = e;
                   }
                 }, 0);
               }
@@ -99,25 +104,26 @@ void function() {
 
                 setTimeout(function() {
                   var onRejected = thenPromise.onRejected;
-                  returnValue = onRejected(_reason);
 
-                  if (returnValue && (typeof returnValue.then === 'function')) {
-                    for (var j = index - 1; j >= 0; j--) {
-                      returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
+                  try {
+                    returnValue = onRejected(_reason);
+
+                    if (returnValue && (typeof returnValue.then === 'function')) {
+                      for (var j = index - 1; j >= 0; j--) {
+                        returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
+                      }
+
+                      _pending = [];
                     }
-
-                    _pending = [];
+                  } catch(e) {
+                    // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
+                    _state = 'rejected';
+                    _reason = e;
                   }
-                });
+                }, 0);
               }
               break;
           }
-
-        } catch(e) {
-          // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
-          _state = 'rejected';
-          _reason = e;
-        }
 
         _pending.splice(index, 1);
       });

@@ -1,4 +1,9 @@
 void function() {
+  var isNode = (function() {
+    return (typeof module === 'object');
+  })();
+
+  var window = window || global;
   window.Xiaoming = window.Xiaoming || {};
 
   if (!Object.create) {
@@ -122,13 +127,13 @@ void function() {
 
   // 状态控制相关方法保持在构造函数上
   Promise.resolve =  function(value) {
-    return this(function(resolve) {
+    return Promise(function(resolve) {
       resolve(value);
     });
   };
 
   Promise.reject = function(reason) {
-    return this(function(resolve, reject) {
+    return Promise(function(resolve, reject) {
       reject(reason);
     });
   };
@@ -196,4 +201,6 @@ void function() {
 
     return deferred.promise;
   };
+
+  if (isNode) module.exports = Promise;
 }();

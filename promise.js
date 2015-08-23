@@ -63,7 +63,8 @@ void function() {
     var _pending = [],
         _state = 'pending',
         _value = null,
-        _reason = null;
+        _reason = null,
+        pending = null;
 
     function handleThen() {
       // 只处理 fullfilled/rejected 状态的 promise
@@ -76,10 +77,11 @@ void function() {
           switch(_state) {
             case 'fullfilled':
               if (thenPromise.onFullfilled && (typeof thenPromise.onFullfilled === 'function')) {
-                var pending = shallowCopy(_pending);
+                pending = shallowCopy(_pending);
 
                 setTimeout(function() {
-                  returnValue = thenPromise.onFullfilled(_value);
+                  var onFullfilled = thenPromise.onFullfilled;
+                  returnValue = onFullfilled(_value);
 
                   if (returnValue && (typeof returnValue.then === 'function')) {
                     for (var j = index - 1; j >= 0; j--) {
@@ -93,10 +95,11 @@ void function() {
               break;
             case 'rejected':
               if (thenPromise.onRejected && (typeof thenPromise.onRejected === 'function')) {
-                var pending = shallowCopy(_pending);
+                pending = shallowCopy(_pending);
 
                 setTimeout(function() {
-                  returnValue = thenPromise.onRejected(_reason);
+                  var onRejected = thenPromise.onRejected;
+                  returnValue = onRejected(_reason);
 
                   if (returnValue && (typeof returnValue.then === 'function')) {
                     for (var j = index - 1; j >= 0; j--) {

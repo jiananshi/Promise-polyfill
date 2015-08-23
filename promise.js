@@ -58,23 +58,37 @@ void function() {
           switch(_state) {
             case 'fullfilled':
               if (thenPromise.onFullfilled && (typeof thenPromise.onFullfilled === 'function')) {
-                returnValue = thenPromise.onFullfilled(_value);
+                setTimeout(function() {
+                  returnValue = thenPromise.onFullfilled(_value);
+
+                  if (returnValue && (typeof returnValue.then === 'function')) {
+                    for (var j = index - 1; j >= 0; j--) {
+                      returnValue.then(_pending[j].onFullfilled, _pending[j].onRejected);
+                    }
+
+                    _pending = [];
+                  }
+                }, 0);
               }
               break;
             case 'rejected':
               if (thenPromise.onRejected && (typeof thenPromise.onRejected === 'function')) {
-                returnValue = thenPromise.onRejected(_reason);
+                setTimeout(function() {
+                  returnValue = thenPromise.onRejected(_reason);
+
+                  if (returnValue && (typeof returnValue.then === 'function')) {
+                    for (var j = index - 1; j >= 0; j--) {
+                      returnValue.then(_pending[j].onFullfilled, _pending[j].onRejected);
+                    }
+
+                    _pending = [];
+                  }
+                });
               }
               break;
           }
 
-          if (returnValue && (typeof returnValue.then === 'function')) {
-            for (var j = index - 1; j >= 0; j--) {
-              returnValue.then(_pending[j].onFullfilled, _pending[j].onRejected);
-            }
 
-            _pending = [];
-          }
         } catch(e) {
           // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
           _state = 'rejected';
@@ -126,7 +140,7 @@ void function() {
   };
 
   // 状态控制相关方法保持在构造函数上
-  Promise.resolve =  function(value) {
+  Promise.resolve = function(value) {
     return Promise(function(resolve) {
       resolve(value);
     });

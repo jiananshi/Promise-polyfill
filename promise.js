@@ -61,69 +61,64 @@ void function() {
   Promise.defer = function() {
     // 状态相关做成私有变量
     var _pending = [],
-        _state = 'pending',
-        _value = null,
-        _reason = null,
-        pending = null;
+      _state = 'pending',
+      _value = null,
+      _reason = null,
+      pending = null;
 
     function handleThen() {
       // 只处理 fullfilled/rejected 状态的 promise
       if (_state === 'pending') return;
 
       _pending.forEachRight(function(thenPromise, index) {
-        var returnValue = null;
+        switch(_state) {
+          case 'fullfilled':
+            if (thenPromise.onFullfilled) {
+              setTimeout(function() {
+                var onFullfilled = thenPromise.onFullfilled;
+                var returnValue = null;
+                var deferred = thenPromise.deferred;
 
-          switch(_state) {
-            case 'fullfilled':
-              if (thenPromise.onFullfilled && (typeof thenPromise.onFullfilled === 'function')) {
-                pending = shallowCopy(_pending);
+                try {
+                  returnValue = onFullfilled(_value);
+                } catch(e) {
+                  deferred.reject(e);
+                }
 
-                setTimeout(function() {
-                  var onFullfilled = thenPromise.onFullfilled;
-                  try {
-                    returnValue = onFullfilled(_value);
+                if (returnValue) {
+                  deferred.resolve(returnValue);
+                } else {
+                  deferred.resolve(_value);
+                }
+              }, 0);
+            } else {
+              thenPromise.deferred.resolve(_value);
+            }
+            break;
+          case 'rejected':
+            if (thenPromise.onRejected) {
+              setTimeout(function() {
+                var onRejected = thenPromise.onRejected;
+                var deferred = thenPromise.deferred;
+                var returnValue = null;
 
-                    if (returnValue && (typeof returnValue.then === 'function')) {
-                      for (var j = index - 1; j >= 0; j--) {
-                        returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
-                      }
+                try {
+                  returnValue = onRejected(_reason);
+                } catch(e) {
+                  deferred.reject(e);
+                }
 
-                      _pending = [];
-                    }
-                  } catch(e) {
-                    // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
-                    _state = 'rejected';
-                    _reason = e;
-                  }
-                }, 0);
-              }
-              break;
-            case 'rejected':
-              if (thenPromise.onRejected && (typeof thenPromise.onRejected === 'function')) {
-                pending = shallowCopy(_pending);
-
-                setTimeout(function() {
-                  var onRejected = thenPromise.onRejected;
-
-                  try {
-                    returnValue = onRejected(_reason);
-
-                    if (returnValue && (typeof returnValue.then === 'function')) {
-                      for (var j = index - 1; j >= 0; j--) {
-                        returnValue.then(pending[j].onFullfilled, pending[j].onRejected);
-                      }
-
-                      _pending = [];
-                    }
-                  } catch(e) {
-                    // 仅需改变 _state，下一个 thenable 函数将根据 _state 处理错误
-                    _state = 'rejected';
-                    _reason = e;
-                  }
-                }, 0);
-              }
-              break;
-          }
+                if (returnValue) {
+                  deferred.resolve(returnValue);
+                } else {
+                  deferred.resolve(_reason);
+                }
+              }, 0);
+            } else {
+              thenPromise.deferred.reject(_reason);
+            }
+            break;
+        }
 
         _pending.splice(index, 1);
       });
@@ -138,11 +133,14 @@ void function() {
 
     promise.then = function(onFullfilled, onRejected) {
       var thenable = {};
+      var deferred = Promise.defer();
 
-      if (onFullfilled) thenable.onFullfilled = onFullfilled;
-      if (onRejected) thenable.onRejected = onRejected;
+      thenable.deferred = deferred;
 
-      thenable.promise = promise;
+      if (onFullfilled && typeof onFullfilled === 'function') thenable.onFullfilled = onFullfilled;
+      if (onRejected && typeof onRejected === 'function') thenable.onRejected = onRejected;
+
+      thenable.promise = deferred.promise;
       _pending.unshift(thenable);
 
       handleThen();
@@ -174,13 +172,17 @@ void function() {
   // 状态控制相关方法保持在构造函数上
   Promise.resolve = function(value) {
     return Promise(function(resolve) {
-      resolve(value);
+      setTimeout(function() {
+        resolve(value);
+      }, 0);
     });
   };
 
   Promise.reject = function(reason) {
     return Promise(function(resolve, reject) {
-      reject(reason);
+      setTimeout(function() {
+        reject(reason);
+      }, 0);
     });
   };
 

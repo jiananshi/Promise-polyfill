@@ -4,5 +4,16 @@ title="Promises/A+ 1.0 compliant" align="right" />
 </a>
 
 lotr
----
+======
 Another promise lib, based on Javascript.
+
+## Intro
+
+Personal project to learn Promise by implementing. Thus, using for large-scale web application is not recommended. It's also a good example 4u to take a deep look at promise. 
+
+## Usage
+
+[MDN Promise](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+
+
+<sub><sup>Additional: Defer is provided, use it as you like</sup></sub>

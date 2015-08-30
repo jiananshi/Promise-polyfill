@@ -3,4 +3,6 @@
 title="Promises/A+ 1.0 compliant" align="right" />
 </a>
 
-
+lotr
+---
+Another promise lib, based on Javascript.

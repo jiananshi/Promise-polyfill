@@ -4,7 +4,6 @@ void function() {
   })();
 
   var window = window || global;
-  window.Xiaoming = window.Xiaoming || {};
 
   if (!Object.create) {
     Object.create = function(klass) {
@@ -38,7 +37,7 @@ void function() {
     }
   };
 
-  Xiaoming.Promise = Promise = function(resolver) {
+  window.Promise = Promise = function(resolver) {
     if (typeof resolver !== 'function') throw new Error('paramater is not a function');
 
     var deferred = Promise.defer();

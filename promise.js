@@ -66,6 +66,53 @@ void function() {
       _reason = null,
       pending = null;
 
+    function Resolve(deferred, x) {
+      if (deferred.promise === x) {
+        throw new TypeError('Refer to the same promise');
+      }
+
+      if (x === null) return deferred.resolve(x);
+
+      if (x instanceof Promise) {
+        x.then(function(value) {
+          Resolve(deferred, value);
+        }, function(reason) {
+          deferred.reject(reason);
+        });
+      } else if (typeof x === 'function' || typeof x === 'object') {
+        var isCalled = false;
+        var then;
+
+        try {
+          then = x.then;
+
+          if (typeof then === 'function') {
+            then.call(x, function(value) {
+                if (!isCalled) {
+                  Resolve(deferred, value);
+                  isCalled = true;
+                }
+            }, function(reason) {
+              if (!isCalled) {
+                deferred.reject(reason);
+                isCalled = true;
+              }
+            });
+          } else {
+            deferred.resolve(x);
+            isCalled = true;
+          }
+        } catch(e) {
+          if (!isCalled) {
+            deferred.reject(e);
+            isCalled = true;
+          }
+        }
+      } else {
+        deferred.resolve(x);
+      }
+    }
+
     function handleThen() {
       // 只处理 fullfilled/rejected 状态的 promise
       if (_state === 'pending') return;
@@ -76,19 +123,14 @@ void function() {
             if (thenPromise.onFullfilled) {
               setTimeout(function() {
                 var onFullfilled = thenPromise.onFullfilled;
-                var returnValue = null;
+                var returnValue;
                 var deferred = thenPromise.deferred;
 
                 try {
                   returnValue = onFullfilled(_value);
+                  Resolve(deferred, returnValue);
                 } catch(e) {
                   deferred.reject(e);
-                }
-
-                if (returnValue) {
-                  deferred.resolve(returnValue);
-                } else {
-                  deferred.resolve(_value);
                 }
               }, 0);
             } else {
@@ -100,18 +142,13 @@ void function() {
               setTimeout(function() {
                 var onRejected = thenPromise.onRejected;
                 var deferred = thenPromise.deferred;
-                var returnValue = null;
+                var returnValue;
 
                 try {
                   returnValue = onRejected(_reason);
+                  Resolve(deferred, returnValue);
                 } catch(e) {
                   deferred.reject(e);
-                }
-
-                if (returnValue) {
-                  deferred.resolve(returnValue);
-                } else {
-                  deferred.resolve(_reason);
                 }
               }, 0);
             } else {
@@ -126,18 +163,17 @@ void function() {
 
     var promise = Object.create(Promise.prototype);
 
-    // defer().promise 的 方法/属性
     promise.state = function() {
       return {state: _state};
     };
 
-    promise.then = function(onFullfilled, onRejected) {
+    promise.then = function(onFulfilled, onRejected) {
       var thenable = {};
       var deferred = Promise.defer();
 
       thenable.deferred = deferred;
 
-      if (onFullfilled && typeof onFullfilled === 'function') thenable.onFullfilled = onFullfilled;
+      if (onFulfilled && typeof onFulfilled === 'function') thenable.onFullfilled = onFulfilled;
       if (onRejected && typeof onRejected === 'function') thenable.onRejected = onRejected;
 
       thenable.promise = deferred.promise;
@@ -172,17 +208,13 @@ void function() {
   // 状态控制相关方法保持在构造函数上
   Promise.resolve = function(value) {
     return Promise(function(resolve) {
-      setTimeout(function() {
-        resolve(value);
-      }, 0);
+      resolve(value);
     });
   };
 
   Promise.reject = function(reason) {
     return Promise(function(resolve, reject) {
-      setTimeout(function() {
-        reject(reason);
-      }, 0);
+      reject(reason);
     });
   };
 

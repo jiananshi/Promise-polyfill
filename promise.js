@@ -87,10 +87,10 @@ void function() {
 
           if (typeof then === 'function') {
             then.call(x, function(value) {
-                if (!isCalled) {
-                  Resolve(deferred, value);
-                  isCalled = true;
-                }
+              if (!isCalled) {
+                Resolve(deferred, value);
+                isCalled = true;
+              }
             }, function(reason) {
               if (!isCalled) {
                 deferred.reject(reason);

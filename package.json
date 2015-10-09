@@ -4,7 +4,7 @@
   "description": "",
   "main": "promise.js",
   "scripts": {
-    "test": "promises-aplus-tests adapter.js"
+    "test": "promises-aplus-tests ./test/adapter.js"
   },
   "repository": {
     "type": "git",

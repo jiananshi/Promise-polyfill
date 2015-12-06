@@ -240,10 +240,12 @@ void function() {
   Promise.all = function(promises) {
     var deferred = Promise.defer();
     var _values = [];
+    var counter = 0;
+    var len = promises.length;
 
-    var successCallback = function(value, len) {
-      _values.push(value);
-      if (_values.length === len) deferred.resolve(_values);
+    var successCallback = function(value, len, index) {
+      _values[index] = value;
+      if (counter++ === len) deferred.resolve(_values);
     };
 
     var errorCallback = function(reason) {
@@ -251,7 +253,10 @@ void function() {
     };
 
     promises.forEach(function(promise, index) {
-      promise.success(successCallback, index);
+      promise.success(function(raw) {
+        successCallback(raw, len, index - 1);
+      });
+
       promise.fail(errorCallback);
     });
 

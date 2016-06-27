@@ -57,6 +57,20 @@ void function() {
     return '[Object Promise]';
   };
 
+  Promise.prototype.done = function(onFullfilled, onRejected) {
+    function unHandleError(e) {
+      if (typeof onRejected === 'function') {
+        onRejected(e);
+      } else {
+	setTimeout(function() {
+          throw e;
+        }, 0);
+      }
+    }
+
+    this.then(onFullfilled, unHandleError);
+  };
+
   Promise.defer = function() {
     // 状态相关做成私有变量
     var _pending = [],
@@ -218,11 +232,7 @@ void function() {
   };
 
   // 流程相关方法
-  Promise.prototype.done = function(onFullfilled, onRejected) {
-    // no return value
-    var handler = onFullfilled || onRejected;
-    this.then(handler);
-  };
+  
 
   Promise.prototype.fin = Promise.prototype['finally'] = function(callback) {
     this.then(callback, callback);

@@ -1,23 +1,7 @@
-void function() {
-  var isNode = (function() {
-    return (typeof module === 'object');
-  })();
-
+{
+  var isNode = (typeof module === 'object');
+  var canUseMutationObserver = (typeof MutationObserver === 'function');
   var window = window || global;
-
-  if (!Object.create) {
-    Object.create = function(klass) {
-      function f() {}
-      f.prototype = klass;
-      return new f();
-    };
-  }
-
-  if (!Array.isArray) {
-    Array.isArray = function(obj) {
-      return Object.prototype.toString.call(obj) === '[object Array]';
-    };
-  }
 
   Array.prototype.forEachRight = function(func) {
     for (var i = this.length - 1; i >= 0; i--) {
@@ -37,7 +21,9 @@ void function() {
     }
   };
 
-  window.Promise = Promise = function(resolver) {
+  if (typeof window.Promise !== 'undefined')
+
+  window.Promise = window.Promise || function(resolver) {
     if (typeof resolver !== 'function') throw new Error('paramater is not a function');
 
     var deferred = Promise.defer();
@@ -62,7 +48,7 @@ void function() {
       if (typeof onRejected === 'function') {
         onRejected(e);
       } else {
-	setTimeout(function() {
+        setTimeout(function() {
           throw e;
         }, 0);
       }
@@ -134,25 +120,34 @@ void function() {
         switch(_state) {
           case 'fullfilled':
             if (thenPromise.onFullfilled) {
-              setTimeout(function() {
+              var cb = function() {
                 var onFullfilled = thenPromise.onFullfilled;
                 var returnValue;
                 var deferred = thenPromise.deferred;
-
                 try {
                   returnValue = onFullfilled(_value);
                   Resolve(deferred, returnValue);
                 } catch(e) {
                   deferred.reject(e);
                 }
-              }, 0);
+              };
+              if (canUseMutationObserver) {
+                var textNode = document.createTextNode('813');
+                var observer = new MutationObserver(cb);
+                observer.observe(textNode, {
+                  characterData: true
+                });
+                textNode.data = '814';
+              } else {
+                setTimeout(cb, 0);
+              }
             } else {
               thenPromise.deferred.resolve(_value);
             }
             break;
           case 'rejected':
             if (thenPromise.onRejected) {
-              setTimeout(function() {
+              var cb = function() {
                 var onRejected = thenPromise.onRejected;
                 var deferred = thenPromise.deferred;
                 var returnValue;
@@ -163,7 +158,17 @@ void function() {
                 } catch(e) {
                   deferred.reject(e);
                 }
-              }, 0);
+              }
+              if (canUseMutationObserver) {
+                var textNode = document.createTextNode('813');
+                var observer = new MutationObserver(cb);
+                observer.observe(textNode, {
+                  characterData: true
+                });
+                textNode.data = '814';
+              } else {
+                setTimeout(cb, 0);
+              }
             } else {
               thenPromise.deferred.reject(_reason);
             }
@@ -232,7 +237,7 @@ void function() {
   };
 
   // 流程相关方法
-  
+
 
   Promise.prototype.fin = Promise.prototype['finally'] = function(callback) {
     this.then(callback, callback);
@@ -297,4 +302,4 @@ void function() {
   };
 
   if (isNode) module.exports = Promise;
-}();
+};

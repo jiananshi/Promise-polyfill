@@ -1,6 +1,6 @@
 {
-  "name": "xiaoming-promise",
-  "version": "0.0.1",
+  "name": "future.js",
+  "version": "0.1.0",
   "description": "",
   "main": "promise.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/XiaomingJS/Xiaoming.Promise.git"
   },
-  "author": "klamtine",
+  "author": "jiananshi",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/XiaomingJS/Xiaoming.Promise/issues"
